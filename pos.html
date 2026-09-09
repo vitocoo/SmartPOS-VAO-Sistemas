@@ -817,7 +817,7 @@ body {
 <script>
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzJ3NY7XJ_DXtCYAhvJhRL-Dhnzib5EsnYUDcXt6XIYnV4gTQ1p-GwUhqDaLjJLZVi2/exec';
-const APP_VERSION = 1;
+const APP_VERSION = 3;
 const PREFIJO  = new URLSearchParams(window.location.search).get("p")?.toUpperCase() || "NE";
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
@@ -1052,23 +1052,137 @@ function agregarDesdeLista(id) {
 }
 
 // ========== BUSCAR PRODUCTO ==========
+// ========== BUSCADOR INTELIGENTE — extraído de seba21 v469 ==========
+
+const SINONIMOS = {
+    cafe:        ['cafe', 'café', 'cortado', 'espresso', 'americano', 'capuchino', 'latte'],
+    medialunas:  ['medialuna', 'medialunas', 'media luna', 'croissant', 'factura', 'facturas'],
+    pan:         ['pan', 'pancho', 'pancito', 'baguette', 'sandwich', 'sandwiche'],
+    gaseosa:     ['gaseosa', 'gaseosas', 'coca', 'pepsi', 'fanta', 'sprite', 'bebida'],
+    agua:        ['agua', 'aguas', 'soda', 'sodas'],
+    jugo:        ['jugo', 'jugos', 'nectar', 'exprimido'],
+    cerveza:     ['cerveza', 'cervezas', 'birra', 'birras', 'rubia', 'negra'],
+    cafe_leche:  ['cafe con leche', 'cafe c leche', 'cortado', 'lagrima'],
+    alfajor:     ['alfajor', 'alfajores'],
+    chocolate:   ['chocolate', 'chocolatada', 'cacao'],
+    empanada:    ['empanada', 'empanadas'],
+    tarta:       ['tarta', 'tartas', 'quiche'],
+    pizza:       ['pizza', 'pizzas', 'faina'],
+    milanesa:    ['milanesa', 'milanesas', 'napolitana'],
+    mate:        ['mate', 'matero', 'yerba', 'cocido'],
+    te:          ['te', 'té', 'infusion', 'manzanilla', 'tilo'],
+    leche:       ['leche', 'sachet', 'larga vida'],
+    yogur:       ['yogur', 'yogurt', 'yogures'],
+    queso:       ['queso', 'quesos', 'cremoso', 'fresco'],
+    jamon:       ['jamon', 'jamón', 'fiambre', 'fiambres', 'salame', 'salami'],
+    fruta:       ['fruta', 'frutas', 'manzana', 'banana', 'naranja', 'pera', 'durazno'],
+    verdura:     ['verdura', 'verduras', 'lechuga', 'tomate', 'papa', 'cebolla', 'zanahoria'],
+    dulce:       ['dulce', 'mermelada', 'miel', 'dulce de leche'],
+    galletitas:  ['galletita', 'galletitas', 'galleta', 'galletas', 'crackers'],
+    aceite:      ['aceite', 'aceites', 'girasol', 'oliva'],
+    azucar:      ['azucar', 'azúcar', 'stevia', 'sacarina'],
+    sal:         ['sal', 'salero'],
+    arroz:       ['arroz'],
+    fideos:      ['fideo', 'fideos', 'pasta', 'pastas', 'tallarines', 'spaghetti'],
+    carne:       ['carne', 'carnes', 'pollo', 'vaca', 'cerdo', 'asado', 'bife'],
+    canasta:     ['canasta', 'canastas', 'bolson', 'bolsón'],
+};
+
+function normalizarBusqueda(str) {
+    return (str || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function expandirTerminos(termNorm) {
+    const palabras = termNorm.split(/\s+/).filter(Boolean);
+    const expandidas = new Set(palabras);
+    palabras.forEach(pal => {
+        Object.values(SINONIMOS).forEach(grupo => {
+            const grupoNorm = grupo.map(s => normalizarBusqueda(s));
+            if (grupoNorm.some(s => s === pal || s.startsWith(pal) || pal.startsWith(s))) {
+                grupoNorm.forEach(s => expandidas.add(s));
+            }
+        });
+    });
+    return [...expandidas];
+}
+
+function scoreBusqueda(nombreNorm, terminos) {
+    let score = 0;
+    const palabras = nombreNorm.split(/\s+/);
+    terminos.forEach(t => {
+        if (!t) return;
+        if (nombreNorm === t)                                    score += 100;
+        else if (nombreNorm.startsWith(t))                       score += 60;
+        else if (palabras.some(p => p === t))                    score += 50;
+        else if (palabras.some(p => p.startsWith(t)))            score += 35;
+        else if (nombreNorm.includes(t))                         score += 20;
+    });
+    return score;
+}
+
+function _buscarInteligenteResultados(term) {
+    const termNorm = normalizarBusqueda(term);
+    if (!termNorm) return [];
+    const terminos = expandirTerminos(termNorm);
+    return productos
+        .map(p => ({ p, score: scoreBusqueda(normalizarBusqueda(p.name), terminos) }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => {
+            // con stock primero, después por score
+            const sa = a.p.stock > 0 ? 1 : 0;
+            const sb = b.p.stock > 0 ? 1 : 0;
+            if (sa !== sb) return sb - sa;
+            return b.score - a.score;
+        })
+        .map(({ p }) => p)
+        .slice(0, 15);
+}
+
+let _searchTimeout;
 function buscarProducto() {
-    const q = document.getElementById('buscadorInput').value.toUpperCase().trim();
-    const div = document.getElementById('buscadorResultados');
-    if (q.length < 2) { div.style.display = 'none'; return; }
-    const matches = productos.filter(p => p.name.includes(q)).slice(0, 10);
-    if (!matches.length) { div.style.display = 'none'; return; }
-    const c = colorStock;
-    div.innerHTML = matches.map(p => {
-        const col = c(p.stock);
-        return '<div class="resultado-item" onclick="agregarProducto('+p.id+')" style="background:'+col.bg+';">' +
-            '<div class="resultado-nombre" style="color:'+(p.stock===0?col.text:'var(--texto)')+';">' + (p.stock===0?'❌ ':'') + p.name + '</div>' +
-            '<div style="text-align:right;">' +
-                '<div class="resultado-precio">$' + p.price.toLocaleString('es-AR') + '</div>' +
-                '<div style="font-size:0.7rem;color:'+col.text+';">Stock: '+p.stock+'</div>' +
-            '</div></div>';
-    }).join('');
-    div.style.display = 'block';
+    clearTimeout(_searchTimeout);
+    _searchTimeout = setTimeout(() => {
+        const q   = document.getElementById('buscadorInput').value.trim();
+        const div = document.getElementById('buscadorResultados');
+        if (q.length < 1) { div.style.display = 'none'; return; }
+
+        const matches = _buscarInteligenteResultados(q);
+        if (!matches.length) {
+            div.innerHTML = '<div style="padding:12px 16px;color:#aaa;font-size:0.85rem;">Sin resultados para <b>' + q + '</b></div>';
+            div.style.display = 'block';
+            return;
+        }
+
+        div.innerHTML = matches.map(p => {
+            const sinStock  = p.stock === 0;
+            const stockBajo = p.stock > 0 && p.stock <= 3;
+            const stockColor = sinStock ? '#bbb' : stockBajo ? '#f57c00' : '#888';
+            const stockLabel = sinStock ? 'SIN STOCK' : stockBajo ? p.stock + ' u. (poco)' : 'Stock: ' + p.stock;
+            const bgColor    = sinStock ? '#f5f5f5' : 'white';
+            const borderLeft = sinStock ? '3px solid #eee' : '3px solid var(--verde)';
+
+            return '<div class="resultado-item" onclick="agregarProducto(' + p.id + ')" ' +
+                'style="background:' + bgColor + ';border-left:' + borderLeft + ';' +
+                'display:flex;align-items:center;justify-content:space-between;' +
+                'padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;">' +
+                '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-weight:700;font-size:0.88rem;color:' + (sinStock ? '#bbb' : 'var(--texto)') + ';' +
+                        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+                        (sinStock ? '❌ ' : '') + p.name +
+                    '</div>' +
+                    '<div style="font-size:0.72rem;color:' + stockColor + ';margin-top:2px;">' + stockLabel + '</div>' +
+                '</div>' +
+                '<div style="text-align:right;flex-shrink:0;margin-left:12px;">' +
+                    '<div style="font-weight:900;font-size:0.95rem;color:var(--lavanda-dark);">$' + p.price.toLocaleString('es-AR') + '</div>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+        div.style.display = 'block';
+    }, 80);
 }
 
 function agregarProducto(id) {
