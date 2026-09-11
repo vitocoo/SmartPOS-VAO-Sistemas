@@ -37,7 +37,7 @@ Si dudás entre cambiar algo no pedido o conservarlo → CONSERVARLO.
 11. Un solo botón de refrescar por pantalla
 12. Mensajes: centrado > abajo-izq > arriba-der. Nunca tapar info.
 13. Modularizar: núcleo liviano + páginas aparte. Nunca uno gigante.
-14. Antes de agregar feature: ¿es venta diaria o herramienta? 
+14. Antes de agregar feature: ¿es venta diaria o herramienta?
     Venta diaria → index. Herramienta → página aparte.
 
 ## REGLAS MULTICLIENTE (VAO POS)
@@ -89,6 +89,9 @@ POR CLIENTE: INVENTARIO_XX, VENTAS_XX, CONFIG_XX, CONF_DIARIA_XX
 `seba21_v469_backup.html` — POS Copihue, 15.000 líneas, 1 año en uso.
 Extraer UNA función por vez. No copiar todo. No copiar arquitectura.
 
-## PROMPT MAESTRO COMPLETO
-El detalle extendido de estas reglas está en `docs/PROMPT_MAESTRO.md`.
-Este archivo es el resumen operativo. Aquel es la fuente completa.
+## CHANCE LOG — OBLIGATORIO
+
+Al final de CADA sesión, generar un CHANCE LOG descriptivo.
+NO es un changelog técnico. Es un registro con contexto y recuperación.
+
+Estructura obligatoria:
