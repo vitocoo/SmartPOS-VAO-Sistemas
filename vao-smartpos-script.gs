@@ -29,6 +29,7 @@ function doGet(e) {
     else if (action === 'adminLogin')         { result = adminLogin(data); }
     else if (action === 'clienteLogin')       { result = clienteLogin(data); }
     else if (action === 'cerrarSesion')       { result = cerrarSesionCliente(prefijo); }
+    else if (action === 'getConfig')          { result = getConfig(prefijo, data.token || ''); }
     else if (action === 'getResumenAdmin')    { result = getResumenAdmin(data.token || ''); }
     else                                      { result = { error: 'Acción no reconocida: ' + action }; }
   } catch (err) {
@@ -440,15 +441,17 @@ function hashSimple(texto) {
 
 // ── ADMIN — CLAVE MAESTRA ─────────────────────────────────────────
 
-// Ejecutar UNA VEZ desde el editor para cargar la clave:
-// setAdminClave('tu_clave_aqui')
-function setAdminClave(clave) {
-  if (!clave || clave.length < 6) {
+function generarClaveAdmin() {
+  var clave = 'ventilador220'; // CAMBIA ESTA CLAVE
+
+  if (clave.length < 6) {
     Logger.log('ERROR: La clave debe tener al menos 6 caracteres');
     return;
   }
+
   var props = PropertiesService.getScriptProperties();
   props.setProperty('ADMIN_CLAVE_HASH', hashSimple(clave));
+
   Logger.log('✅ Clave admin configurada correctamente');
 }
 
@@ -663,4 +666,44 @@ function getResumenAdmin(token) {
   }
 
   return { success: true, clientes: clientes };
+}
+
+// ===============================
+// MÓDULO CONFIG — VAO SmartPOS
+// Lee la configuración del cliente (hoja CONFIG_<prefijo>)
+// El PIN es sensible y NUNCA se devuelve al frontend
+// Cadena de validación (Reglas 24-29): prefijo → activo → token → token válido
+// ===============================
+
+function getConfig(prefijo, token) {
+  var infoCliente = obtenerInfoCliente(prefijo);
+  if (!infoCliente)        return { error: 'Cliente no encontrado' };
+  if (!infoCliente.activo) return { error: 'Cliente inactivo — contactar a VAO Sistemas' };
+  if (!validarSesionCliente(prefijo, token)) return { error: 'Sesión inválida o expirada' };
+
+  var resultado = leerConfig(prefijo);
+  if (resultado.config) delete resultado.config.PIN; // el PIN nunca sale del servidor
+  return resultado;
+}
+
+function leerConfig(prefijo) {
+  var ss   = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('CONFIG_' + prefijo);
+  if (!hoja) throw new Error('No existe hoja CONFIG_' + prefijo);
+
+  var datos  = hoja.getDataRange().getValues();
+  var config = {};
+
+  for (var i = 1; i < datos.length; i++) {
+    var campo = datos[i][0] ? String(datos[i][0]).trim() : '';
+    if (!campo) continue; // fila separadora de sección ("--- IDENTIDAD ---", etc.), se ignora
+
+    var valor = datos[i][1];
+    if (valor === 'TRUE')  valor = true;
+    if (valor === 'FALSE') valor = false;
+
+    config[campo] = valor;
+  }
+
+  return { config: config };
 }
