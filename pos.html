@@ -548,6 +548,31 @@ body {
 </head>
 <body>
 
+<!-- OVERLAY PIN -->
+<div id="overlayPin" style="position:fixed;inset:0;z-index:5000;background:linear-gradient(135deg,#0A2472,#1E88E5);
+        display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div style="width:100%;max-width:320px;text-align:center;color:white;">
+        <div id="overlayPinTitulo" style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;margin-bottom:4px;">Verificando sesión...</div>
+        <div id="overlayPinSub" style="font-size:0.8rem;opacity:0.75;margin-bottom:24px;">VAO Sistemas</div>
+
+        <div id="overlayPinForm" style="display:none;">
+            <input type="text" id="overlayPinInput" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                   placeholder="PIN de 6 dígitos" autocomplete="off"
+                   onkeydown="if(event.key==='Enter')intentarLoginPin()"
+                   style="width:100%;padding:16px;border:none;border-radius:12px;font-size:1.4rem;
+                          text-align:center;letter-spacing:0.4em;outline:none;margin-bottom:14px;
+                          font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+            <div id="overlayPinError" style="color:#ffcdd2;font-size:0.85rem;min-height:18px;margin-bottom:10px;"></div>
+            <button id="overlayPinBtn" onclick="intentarLoginPin()"
+                    style="width:100%;padding:14px;border:none;border-radius:50px;
+                           background:linear-gradient(135deg,var(--naranja),var(--naranja-dark));
+                           color:white;font-size:1rem;font-weight:900;cursor:pointer;font-family:'DM Sans',sans-serif;">
+                Ingresar
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- HEADER -->
 <div class="header">
     <div class="header-logo">
@@ -575,7 +600,7 @@ body {
     <button class="btn-tool ajuste" onclick="abrirAjuste()">✏️ Ajustar</button>
     <button class="btn-tool hoy" onclick="abrirResumen()">📋 Hoy</button>
     <button class="btn-tool stats" onclick="window.location.href='reportes.html?p='+PREFIJO">📊 Reportes</button>
-    <button class="btn-tool cerrar" onclick="irAlInicio()">🏠 Inicio</button>
+    <button class="btn-tool cerrar" onclick="irAlInicio()">🚪 Salir</button>
 </div>
 
 <!-- BUSCADOR -->
@@ -815,12 +840,81 @@ body {
 </div>
 
 <script>
+// ========== GUARD: prefijo requerido en la URL ==========
+if (!new URLSearchParams(window.location.search).has('p')) {
+    window.location.href = 'index.html';
+    throw new Error('Sin prefijo en la URL — redirigiendo a index.html');
+}
+
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzJ3NY7XJ_DXtCYAhvJhRL-Dhnzib5EsnYUDcXt6XIYnV4gTQ1p-GwUhqDaLjJLZVi2/exec';
-const APP_VERSION = 3;
+const APP_VERSION = 4;
 const PREFIJO  = new URLSearchParams(window.location.search).get("p")?.toUpperCase() || "NE";
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
+
+// ========== SESIÓN CLIENTE (PIN) ==========
+const TOKEN_KEY = 'vao_token_' + PREFIJO;
+
+function mostrarFormularioPin(mensajeError) {
+    document.getElementById('overlayPinTitulo').textContent = 'Ingresá tu PIN';
+    document.getElementById('overlayPinSub').textContent = PREFIJO;
+    document.getElementById('overlayPinForm').style.display = 'block';
+    document.getElementById('overlayPinError').textContent = mensajeError || '';
+    document.getElementById('overlayPinInput').value = '';
+    document.getElementById('overlayPinInput').focus();
+}
+
+function ocultarOverlayPin() {
+    document.getElementById('overlayPin').style.display = 'none';
+}
+
+async function intentarLoginPin() {
+    const pin = document.getElementById('overlayPinInput').value.trim();
+    const btn = document.getElementById('overlayPinBtn');
+    const err = document.getElementById('overlayPinError');
+    err.textContent = '';
+    if (!/^\d{6}$/.test(pin)) {
+        err.textContent = 'El PIN debe tener 6 números';
+        return;
+    }
+    btn.disabled = true; btn.textContent = 'Verificando...';
+    try {
+        const url = API_URL + '?action=clienteLogin&data=' + encodeURIComponent(JSON.stringify({ prefijo: PREFIJO, pin: pin }));
+        const r = await fetch(url, { redirect: 'follow' });
+        const d = await r.json();
+        if (d.success && d.token) {
+            localStorage.setItem(TOKEN_KEY, d.token);
+            ocultarOverlayPin();
+        } else {
+            mostrarFormularioPin(d.error || 'PIN incorrecto');
+        }
+    } catch (e) {
+        mostrarFormularioPin('Sin conexión');
+    }
+    btn.disabled = false; btn.textContent = 'Ingresar';
+}
+
+async function verificarSesionCliente() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) { mostrarFormularioPin(); return; }
+    try {
+        const url = API_URL + '?action=getConfig&prefijo=' + PREFIJO + '&data=' + encodeURIComponent(JSON.stringify({ token: token }));
+        const r = await fetch(url, { redirect: 'follow' });
+        const d = await r.json();
+        if (d.error) {
+            localStorage.removeItem(TOKEN_KEY);
+            mostrarFormularioPin(d.error);
+        } else {
+            ocultarOverlayPin();
+        }
+    } catch (e) {
+        // sin conexión: no bloqueamos al cliente por falta de red si ya tenía token
+        ocultarOverlayPin();
+    }
+}
+
+verificarSesionCliente();
 
 // Datos del vendedor — se cargan desde Sheets, NUNCA hardcodeados
 let vendedorActual = {
@@ -854,7 +948,11 @@ function colorPorPrefijo(prefijo) {
     return paletas[hash % paletas.length];
 }
 
-function irAlInicio() { window.location.href = 'index.html'; }
+function irAlInicio() {
+    localStorage.removeItem(TOKEN_KEY);
+    fetch(API_URL + '?action=cerrarSesion&prefijo=' + PREFIJO, { redirect: 'follow' }).catch(() => {});
+    window.location.href = 'index.html';
+}
 
 // Avatar provisional con color del algoritmo
 document.getElementById('headerTitulo').textContent = PREFIJO;
