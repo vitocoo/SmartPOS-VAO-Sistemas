@@ -50,6 +50,48 @@ Si dudás entre cambiar algo no pedido o conservarlo → CONSERVARLO.
 21. PIN siempre 6 dígitos (solo números)
 22. Si módulo = FALSE → ni botón ni endpoint existen
 23. Avatar toma color_primario del cliente
+## REGLAS DE SEGURIDAD EN ENDPOINTS
+Aplica a cualquier endpoint del GAS que devuelva datos privados
+(no aplica a endpoints públicos, como el login).
+
+24. TODO endpoint que devuelva datos privados DEBE validar sesión.
+    Datos privados = config, ventas, inventario, clientes, resúmenes.
+    No alcanza con validar:
+      - Que el prefijo exista.
+      - Que el cliente esté activo.
+    Hay que validar ADEMÁS:
+      - Que venga token.
+      - Que el token sea válido (validarSesionCliente/Admin).
+      - Que el token no haya expirado.
+
+25. Cadena obligatoria de validación en cada endpoint privado:
+    1. ¿Existe el prefijo/cliente?
+    2. ¿Está activo?
+    3. ¿Vino token?
+    4. ¿El token es válido para ese prefijo?
+    5. ¿El token no expiró?
+    6. Recién ahí: acceder a las hojas y devolver datos.
+
+26. NUNCA confiar en el frontend para validar seguridad.
+    El frontend puede ocultar botones, pero el backend es el único
+    que decide si entrega o no los datos.
+    Si el frontend valida y el backend no → brecha de seguridad.
+
+27. NUNCA devolver campos sensibles aunque el endpoint esté validado.
+    Ejemplos: PIN, tokens MP, claves, hashes.
+    Filtrar estos campos ANTES de serializar la respuesta.
+    Ejemplo: `delete config.PIN;` antes de `return`.
+
+28. Antes de agregar un endpoint nuevo, preguntarse:
+    - ¿Este endpoint devuelve datos privados? → Validar sesión.
+    - ¿Qué pasa si un atacante adivina el prefijo? → Debe fallar.
+    - ¿Qué pasa si el token es inventado? → Debe fallar.
+    - ¿Qué pasa si el token expiró? → Debe fallar.
+    Si alguna de las respuestas no es "falla", el endpoint está mal.
+
+29. Este bloque de reglas aplica a TODAS las apps VAO
+    (VAO POS, SmartPOS, futuras), siempre que la arquitectura
+    tenga cliente/usuarios + endpoints + sesión.
 
 ## STACK
 - Frontend: HTML/CSS/JS puro
@@ -88,6 +130,24 @@ POR CLIENTE: INVENTARIO_XX, VENTAS_XX, CONFIG_XX, CONF_DIARIA_XX
 ## FUENTE DE FUNCIONES MADURAS
 `seba21_v469_backup.html` — POS Copihue, 15.000 líneas, 1 año en uso.
 Extraer UNA función por vez. No copiar todo. No copiar arquitectura.
+
+## CHECKLIST AL CREAR O MODIFICAR UN ENDPOINT
+
+Antes de escribir código, responder:
+
+- [ ] ¿Este endpoint devuelve datos privados? (config, ventas, etc.)
+- [ ] ¿Valida que el prefijo exista?
+- [ ] ¿Valida que el cliente esté activo?
+- [ ] ¿Valida que venga token?
+- [ ] ¿Valida que el token sea válido para ese prefijo?
+- [ ] ¿Valida que el token no haya expirado?
+- [ ] ¿Filtra campos sensibles antes de devolver? (PIN, tokens MP)
+- [ ] ¿El frontend pasa el token correctamente? (data={"token":"..."})
+- [ ] ¿Si el token es inventado, el endpoint falla?
+- [ ] ¿Si el token expiró, el endpoint falla?
+
+Si alguna respuesta es "no" → NO escribir el código todavía.
+Primero resolver el hueco.
 
 ## CHANCE LOG — OBLIGATORIO
 
