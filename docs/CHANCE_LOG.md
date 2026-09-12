@@ -179,3 +179,53 @@ Una vez creado, se puede:
 ═══════════════════════════════════════════════════
 FIN DE LA SESIÓN — 11/09/2026
 ═══════════════════════════════════════════════════
+
+index v007
+
+index v008
+
+CONFIG_XX
+
+vao-smartpos-script.gs v002
+
+Commit: chance log — 11/09/2026 sesiones completas del día.
+
+## ESTADO ACTUAL — 11/09/2026 (cierre del día)
+
+### Ya funciona
+- index.html v008 (pantalla entrada + identidad VAO)
+- pos.html v003 (sin PIN todavía)
+- admin.html v001 (con login)
+- GAS v002 con getConfig funcionando y validado
+- CONFIG_XX creada con 55 campos
+- VENDEDORES con XX y LP cargados
+- Chance Log activo
+
+### No existe todavía
+- Pantalla PIN en pos.html
+- Toolbar dinámica según packs
+- 3 colores por cliente en el POS
+- Sesión de cliente (token en pos.html)
+- config.html
+- Validación de prefijo en el frontend
+
+### Problemas abiertos
+1. El sistema entra con cualquier código (falta validar prefijo en pos.html)
+2. Paleta oficial sin definir (Brand Book vs Manual de Identidad)
+3. SVG oficial del símbolo sin conseguir
+4. Avatares por iniciales vs Manual de Identidad
+5. Google Fonts faltantes en index v008
+6. El campo `telefono` llega como número (convertir a string en frontend)
+
+## PRÓXIMO PASO — AL RETOMAR
+
+PASO 1: Pantalla PIN en pos.html
+- Lee `?p=XX` de la URL
+- Pide PIN de 6 dígitos
+- Valida con clienteLogin del GAS
+- Guarda token en localStorage
+- Redirige al POS con sesión activa
+
+Después: pos.html lee getConfig para aplicar colores y packs.
+
+Al terminar la sesión: Chance Log del día.
