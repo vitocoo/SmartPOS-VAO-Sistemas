@@ -596,10 +596,10 @@ body {
 
 <!-- TOOLBAR -->
 <div class="toolbar">
-    <button class="btn-tool ingreso" onclick="abrirIngreso()">📦 Ingresar</button>
-    <button class="btn-tool ajuste" onclick="abrirAjuste()">✏️ Ajustar</button>
-    <button class="btn-tool hoy" onclick="abrirResumen()">📋 Hoy</button>
-    <button class="btn-tool stats" onclick="window.location.href='reportes.html?p='+PREFIJO">📊 Reportes</button>
+    <button class="btn-tool ingreso" id="btnIngreso" onclick="abrirIngreso()">📦 Ingresar</button>
+    <button class="btn-tool ajuste" id="btnAjuste" onclick="abrirAjuste()">✏️ Ajustar</button>
+    <button class="btn-tool hoy" id="btnHoy" onclick="abrirResumen()">📋 Hoy</button>
+    <button class="btn-tool stats" id="btnReportes" onclick="window.location.href='reportes.html?p='+PREFIJO">📊 Reportes</button>
     <button class="btn-tool cerrar" onclick="irAlInicio()">🚪 Salir</button>
 </div>
 
@@ -848,13 +848,27 @@ if (!new URLSearchParams(window.location.search).has('p')) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzJ3NY7XJ_DXtCYAhvJhRL-Dhnzib5EsnYUDcXt6XIYnV4gTQ1p-GwUhqDaLjJLZVi2/exec';
-const APP_VERSION = 4;
+const APP_VERSION = 5;
 const PREFIJO  = new URLSearchParams(window.location.search).get("p")?.toUpperCase() || "NE";
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
 // ========== SESIÓN CLIENTE (PIN) ==========
 const TOKEN_KEY = 'vao_token_' + PREFIJO;
+let CONFIG_ACTUAL = null;
+
+function generarToolbarSegunPacks(config) {
+    const botonesPorPack = {
+        btnIngreso:  config.pack1_ingreso,
+        btnHoy:      config.pack1_hoy,
+        btnAjuste:   config.pack2_editor_stock,
+        btnReportes: config.pack2_reportes
+    };
+    Object.keys(botonesPorPack).forEach(function(id) {
+        const btn = document.getElementById(id);
+        if (btn) btn.style.display = (botonesPorPack[id] === true) ? '' : 'none';
+    });
+}
 
 function mostrarFormularioPin(mensajeError) {
     document.getElementById('overlayPinTitulo').textContent = 'Ingresá tu PIN';
@@ -885,7 +899,7 @@ async function intentarLoginPin() {
         const d = await r.json();
         if (d.success && d.token) {
             localStorage.setItem(TOKEN_KEY, d.token);
-            ocultarOverlayPin();
+            await verificarSesionCliente();
         } else {
             mostrarFormularioPin(d.error || 'PIN incorrecto');
         }
@@ -906,6 +920,8 @@ async function verificarSesionCliente() {
             localStorage.removeItem(TOKEN_KEY);
             mostrarFormularioPin(d.error);
         } else {
+            CONFIG_ACTUAL = d.config;
+            generarToolbarSegunPacks(CONFIG_ACTUAL);
             ocultarOverlayPin();
         }
     } catch (e) {
