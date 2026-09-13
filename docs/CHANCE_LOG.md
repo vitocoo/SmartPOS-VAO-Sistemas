@@ -298,3 +298,112 @@ Al terminar: Chance Log del día.
 ═══════════════════════════════════════════════════
 FIN DE LAS SESIONES — 11-12/09/2026
 ═══════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+CHANCE LOG — 13/09/2026 — SESIÓN DE INVENTARIO BACKEND
+═══════════════════════════════════════════════════════════════
+
+QUÉ:
+Se hizo el inventario completo de las funciones del backend de
+Copihue (Code.gs + 7 archivos .gs satélite) para migrar a VAO POS.
+Se armó un TSV de ~215 filas + prompt para Claude.
+
+POR QUÉ:
+El proyecto estaba disperso en 3 IAs (ChatGPT, Claude, yo).
+Nadie tenía registro de qué funciones existen en Copihue y
+cuáles aplican a VAO POS. Sin este inventario, la migración se
+vuelve caos: se duplica trabajo, se olvidan funciones, se
+descartan cosas útiles.
+
+CÓMO:
+1. Victor pasó los 7 archivos .gs de Copihue:
+   - code.gs (backend principal, v11.0)
+   - multicompra.gs
+   - motorInventario.gs
+   - pedidos_wa.gs
+   - sin_stock.gs
+   - flyer_multicompra.gs
+   - bloque asistente voz.gs
+2. Se identificaron y clasificaron ~215 funciones por módulo:
+   Ventas (19), Fiados (20), Caja (11), Inventario (32),
+   Ofertas (55), Juegos (20), Sistema (22), Cacheo (3),
+   Logs (3), Herramientas (25), Descartados (4).
+3. Se armó un TSV con columnas:
+   Módulo | Archivo | Función | Qué hace | Estado | Prioridad
+   | ¿Migrar? | Migrado | Notas
+4. Se descartaron 3 cosas:
+   - Alexa (requiere training por cliente, inviable multi-cliente)
+   - ingreso.html viejo (reemplazado por modal del POS)
+   - _aliasEspecificos (33 productos específicos de Copihue)
+5. Se decidió formato: hoja de Google Sheets "BACKEND" con
+   colores por prioridad + checkboxes en columna Migrado.
+6. Se armó prompt para Claude (Opción 2: script que crea la
+   hoja automáticamente).
+
+DÓNDE:
+- Archivos leídos: seba21.html, code.gs, + 6 .gs satélite
+- Inventario: pendiente de crear en Sheet "VAO POS — Inventario
+  de Funciones" (hoja BACKEND)
+- Prompt para Claude: listo para pegar (no ejecutado todavía)
+
+PROBLEMA QUE EVITA O RESUELVE:
+Sin este inventario:
+- Cada IA trabajaba con información distinta.
+- Victor olvidaba funciones que ya tenía en Copihue.
+- Se podía duplicar código al migrar.
+- Se podían perder funciones valiosas (motor de compra
+  sugerida, blindaje de multicompra, scoring de faltantes).
+
+SI SE ROMPE:
+- El TSV está en este chat. Se puede volver a pegar a Claude.
+- Los 7 archivos .gs originales siguen intactos en Copihue.
+- No se tocó nada de Copihue. Solo lectura.
+
+PENDIENTE:
+- Ejecutar el prompt en Claude y correr el script.
+- Crear hoja BACKEND en el Sheet "VAO POS — Inventario de Funciones".
+- Bloque 2: FRONTEND (seba21.html, ~150 filas).
+- Bloque 3: DASHBOARD + LIMPIEZA + PLAN MIGRACIÓN.
+- Marcar prioridades finales (propuestas vs ajustadas por Victor).
+- Empezar a migrar funciones de alta prioridad a VAO POS.
+
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+ESTADO ACUMULADO — VAO POS (11-13/09/2026)
+═══════════════════════════════════════════════════════════════
+
+FUNCIONANDO EN PRODUCCIÓN (vaopos.vercel.app):
+- index.html v008 (pantalla de entrada)
+- pos.html v005 (PIN + toolbar dinámica)
+- admin.html v001 (con login)
+- GAS v004 (getConfig validado)
+- CONFIG_XX creada (55 campos)
+- VENDEDORES con XX y LP cargados
+- Chance Log activo
+- Base fija forzada (ventas, cobrar, ticket_wa, buscador)
+
+DOCUMENTACIÓN:
+- CLAUDE.md en el repo (con metáfora del cuerpo + reglas)
+- docs/ARQUITECTURA.md
+- docs/CONFIG_XX.md
+- docs/PROMPT_MAESTRO.md
+- docs/CHANCE_LOG.md
+
+PENDIENTES CONOCIDOS DE VAO POS:
+- El sistema entra con cualquier código (falta validar
+  prefijo en pos.html contra VENDEDORES)
+- Reportes.html: sin PIN + botón "Volver" va a venta.html
+- Ajuste rápido de pos.html: no busca productos (¿bug acentos?)
+- Paleta oficial sin definir
+- SVG oficial sin conseguir
+- Google Fonts faltantes en index
+- Botón-ícono 🏠 del header sin unificar con "Salir"
+- validarPrefijo en el backend (regla 26/18)
+
+INVENTARIO COPIHUE → VAO POS:
+- Completado: BACKEND (7 archivos .gs, ~215 funciones)
+- Pendiente: FRONTEND (seba21.html, ~150 funciones)
+- Pendiente: DASHBOARD + LIMPIEZA + PLAN
+
+═══════════════════════════════════════════════════════════════
