@@ -134,4 +134,28 @@ Extraer UNA función por vez. No copiar todo. No copiar arquitectura.
 Al final de CADA sesión, generar un CHANCE LOG descriptivo.
 NO es un changelog técnico. Es un registro con contexto y recuperación.
 
-Estructura obligatoria:
+## REGLAS DE PIN POR PÁGINA
+
+Toda página que muestre datos sensibles del cliente DEBE pedir PIN.
+Datos sensibles = todo lo que el cliente no querría que un tercero vea.
+
+CON PIN:
+- pos.html (ventas, inventario, cobrar)
+- reportes.html (ventas del cliente)
+- finanzas.html (cuando exista)
+- fiados.html (cuando exista)
+- prestamos.html (cuando exista)
+- retiro-caja.html (cuando exista)
+- retiro-local.html (cuando exista)
+- config.html (cuando exista)
+- Cualquier página con datos del negocio
+
+SIN PIN (públicas):
+- index.html (pantalla de entrada)
+- catalog.html (si algún día hay catálogo público)
+
+CON CLAVE ADMIN (no PIN):
+- admin.html (login propio, uso exclusivo de VAO)
+
+REGLA: si el cliente pierde plata porque alguien vio esos datos → PIN.
+REGLA: si el cliente lo puede compartir tranquilamente → no PIN.
