@@ -159,3 +159,10 @@ CON CLAVE ADMIN (no PIN):
 
 REGLA: si el cliente pierde plata porque alguien vio esos datos → PIN.
 REGLA: si el cliente lo puede compartir tranquilamente → no PIN.
+
+para vao sistemas existe marca VAO SISTEMAS (logo) no es usado en almacen copihue.
+4 colores base que pueden pisar codigo de colores de mis sitemas.(modelos aparte de almacen copihue)
+para esto existe plantilla en imagen.png con estructura y explicacion del logo.
+
+colores almacen copihue.
+codigo colores para nuestros sistemas ver sistema-de-color-promociones-copihue.md
