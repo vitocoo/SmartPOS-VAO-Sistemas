@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="icon" type="image/png" href="favicon-48.png"><!-- logo nuevo VAO -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>SmartPOS · VAO Sistemas · Reportes</title>
@@ -98,30 +99,35 @@ body { font-family:'DM Sans',sans-serif; background:var(--blanco); color:var(--t
 .venta-item { display:flex; justify-content:space-between; padding:4px 0; font-size:0.8rem; border-bottom:1px solid var(--arena); color:var(--gris); }
 .venta-item:last-child { border-bottom:none; }
 .empty { text-align:center; padding:30px 20px; color:#bbb; }
+/* V3: tickets agrupados por VentaId */
+.venta-ticket { cursor:pointer; color:var(--texto); }
+.venta-ticket .tk-meta { color:var(--gris); }
+.venta-ticket .tk-ver { color:var(--oliva); font-weight:700; margin-left:6px; }
+.venta-suelta .tk-sin { font-size:0.68rem; color:#999; margin-left:4px; }
+.tk-bg { position:fixed; inset:0; background:rgba(17,24,39,0.55); z-index:2000; display:flex; align-items:center; justify-content:center; padding:16px; }
+.tk-sheet { background:white; border-radius:16px; width:100%; max-width:420px; max-height:85dvh; overflow-y:auto; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,0.25); }
+.tk-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
+.tk-titulo { font-weight:900; font-size:1rem; color:var(--oliva-dark); }
+.tk-id { font-size:0.7rem; color:var(--gris); word-break:break-all; margin-top:2px; }
+.tk-cerrar { border:none; background:var(--arena); border-radius:50%; width:32px; height:32px; font-size:1rem; cursor:pointer; flex-shrink:0; }
+.tk-dato { font-size:0.8rem; color:var(--gris); margin-bottom:4px; }
+.tk-fila { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--arena); font-size:0.85rem; }
+.tk-prod { color:var(--texto); }
+.tk-unit { font-size:0.72rem; color:var(--gris); }
+.tk-sub { font-weight:700; white-space:nowrap; }
+.tk-total { display:flex; justify-content:space-between; margin-top:10px; font-weight:900; font-size:1.05rem; color:var(--oliva-dark); }
 .pb { padding-bottom:30px; }
 </style>
 </head>
 <body>
 
 <div class="header">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 520" height="38" style="flex-shrink:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3));" role="img" aria-label="VAO Sistemas">
-  <defs>
-    <linearGradient id="rbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#21A8F6"/><stop offset="100%" stop-color="#0B49E8"/></linearGradient>
-    <linearGradient id="rgg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6BCB17"/><stop offset="100%" stop-color="#24A72E"/></linearGradient>
-    <linearGradient id="rsg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFC21A"/><stop offset="100%" stop-color="#FF8C00"/></linearGradient>
-    <linearGradient id="rhg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0B49E8"/><stop offset="28%" stop-color="#16A6EF"/><stop offset="50%" stop-color="#43B02A"/><stop offset="70%" stop-color="#D6CF00"/><stop offset="86%" stop-color="#FFB000"/><stop offset="100%" stop-color="#FF8C00"/></linearGradient>
-  </defs>
-  <path d="M105 65 L305 65 L515 305 L710 65 L900 65 L525 430 L470 430 Z" fill="url(#rbg)"/>
-  <path d="M565 405 L900 90 L1165 385 L1015 385 L900 240 L800 350 L1005 350 L1065 420 L700 420 Z" fill="url(#rgg)"/>
-  <path d="M1228 351 A115 115 0 0 1 1458 351 Z" fill="url(#rsg)"/>
-  <g stroke="#FFB000" stroke-width="15" stroke-linecap="round"><line x1="1343" y1="165" x2="1343" y2="112"/><line x1="1230" y1="214" x2="1190" y2="174"/><line x1="1456" y1="214" x2="1496" y2="174"/></g>
-  <path d="M70 490 C 355 395, 650 355, 980 352 C 1210 350, 1410 370, 1560 410" fill="none" stroke="url(#rhg)" stroke-width="15" stroke-linecap="round"/>
-</svg>
+    <img src="logo_oscuro.png" alt="VAO Sistemas" style="height:30px;width:auto;flex-shrink:0;filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 1px 2px rgba(0,0,0,.35));">
     <div>
         <div class="header-titulo">SmartPOS</div>
-        <div class="header-sub">Reportes</div>
+        <div class="header-sub" id="headerSub">Reportes</div>
     </div>
-    <a href="venta.html" class="btn-volver">← Volver</a>
+    <a href="pos.html?p=" class="btn-volver" id="btnVolverPos">← Volver</a>
 </div>
 
 <div id="appContent">
@@ -129,8 +135,28 @@ body { font-family:'DM Sans',sans-serif; background:var(--blanco); color:var(--t
 </div>
 
 <script>
-const APP_VERSION = 1;
+const APP_VERSION = 8; // V8: con un día elegido, 🏦 Caja del día por medio según el servidor (separa el cobro mixto en cada medio e incluye cobros de fiados)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzJ3NY7XJ_DXtCYAhvJhRL-Dhnzib5EsnYUDcXt6XIYnV4gTQ1p-GwUhqDaLjJLZVi2/exec';
+// Paso 11: reportes.html no tenía prefijo ni token propios — por eso
+// getVentas se llamaba sin prefijo y siempre traía las ventas de "NE"
+// (el default del backend). Se usa exactamente el mismo esquema que ya
+// usa pos.html: ?p=XX en la URL + el token que pos.html ya guardó en
+// localStorage al loguearse (vao_token_XX) — no se crea otro sistema de
+// sesión nuevo.
+const PREFIJO = (new URLSearchParams(window.location.search).get('p') || '').toUpperCase();
+const TOKEN_KEY = 'vao_token_' + PREFIJO;
+function _tokenActual() { return localStorage.getItem(TOKEN_KEY) || ''; }
+// V2: fecha AAAA-MM-DD en hora LOCAL del navegador (toISOString() usa UTC y,
+// en Argentina, desde las 21:00 devolvía el día siguiente).
+function _fechaLocalISO(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+document.addEventListener('DOMContentLoaded', function () {
+    var btnVolver = document.getElementById('btnVolverPos');
+    if (btnVolver) btnVolver.href = 'pos.html?p=' + PREFIJO;
+    var headerSub = document.getElementById('headerSub');
+    if (headerSub) headerSub.textContent = 'Reportes · V' + APP_VERSION;
+});
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS_SEM = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
@@ -141,11 +167,22 @@ let diasSeleccionados = new Set();
 let metodosActivos = new Set(['TODOS']);
 
 async function init() {
+    if (!PREFIJO || !_tokenActual()) {
+        document.getElementById('appContent').innerHTML =
+            '<div class="loading" style="color:var(--rojo);">❌ Sesión no encontrada. Volvé a entrar desde el POS.</div>';
+        return;
+    }
     try {
-        const r = await fetch(API_URL + '?action=getVentas', { redirect:'follow' });
+        const url = API_URL + '?action=getVentas&prefijo=' + PREFIJO + '&data=' + encodeURIComponent(JSON.stringify({ token: _tokenActual() }));
+        const r = await fetch(url, { redirect:'follow' });
         const data = await r.json();
+        if (data.error) {
+            document.getElementById('appContent').innerHTML =
+                '<div class="loading" style="color:var(--rojo);">❌ ' + data.error + '</div>';
+            return;
+        }
         todasVentas = data.ventas || [];
-        diasSeleccionados.add(new Date().toISOString().slice(0,10));
+        diasSeleccionados.add(_fechaLocalISO(new Date()));
         renderApp();
     } catch(e) {
         document.getElementById('appContent').innerHTML =
@@ -226,7 +263,7 @@ function renderApp() {
     const totSel = calcularTotales(ventasSel);
     const topSel = calcularTopProductos(ventasSel);
     const metodos = getMetodosDisponibles();
-    const hoyStr = new Date().toISOString().slice(0,10);
+    const hoyStr = _fechaLocalISO(new Date());
 
     // Agrupar por día (MES)
     const porDia = {};
@@ -258,7 +295,7 @@ function renderApp() {
         '<button class="chip-metodo'+(metodosActivos.has('TODOS')?' activo':'')+'" onclick="toggleMetodo(\'TODOS\')">📋 Todos</button>' +
         metodos.map(m => {
             const ic = m.includes('EFECTIVO')?'💵':m.includes('TRANSF')?'📱':m.includes('QR')?'📲':'💳';
-            return '<button class="chip-metodo'+(metodosActivos.has(m)?' activo':'')+'" onclick="toggleMetodo(\''+m+'\')">'+ic+' '+m+'</button>';
+            return '<button class="chip-metodo'+(metodosActivos.has(m)?' activo':'')+'" data-m="'+_esc(m)+'" onclick="toggleMetodo(this.dataset.m)">'+ic+' '+_esc(m)+'</button>'; // V5: nombre escapado
         }).join('') + '</div>';
 
     // Resumen
@@ -268,7 +305,7 @@ function renderApp() {
     // Métodos breakdown
     const metodosRows = Object.entries(totSel.metodos).sort((a,b)=>b[1]-a[1]).map(([m,t]) => {
         const pct = totSel.total>0 ? Math.round(t/totSel.total*100) : 0;
-        return '<div class="metodo-row"><span class="metodo-nombre">'+m+'</span><span><strong class="metodo-monto">'+fmt(t)+'</strong><span class="metodo-pct">'+pct+'%</span></span></div>';
+        return '<div class="metodo-row"><span class="metodo-nombre">'+_esc(m)+'</span><span><strong class="metodo-monto">'+fmt(t)+'</strong><span class="metodo-pct">'+pct+'%</span></span></div>';
     }).join('');
 
     // Top productos
@@ -276,10 +313,11 @@ function renderApp() {
     const topsHTML = topSel.length ? topSel.map((p,i) => {
         const pct = Math.round(p.total/maxTop*100);
         const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-        return '<div class="prod-row"><div class="prod-header"><span class="prod-nombre">'+medal+' '+p.nombre.substring(0,32)+'</span><span class="prod-detalle">'+Math.round(p.qty)+' u · '+fmt(p.total)+'</span></div><div class="barra-bg"><div class="barra-fill" style="width:'+pct+'%"></div></div></div>';
+        return '<div class="prod-row"><div class="prod-header"><span class="prod-nombre">'+medal+' '+_esc(p.nombre.substring(0,32))+'</span><span class="prod-detalle">'+Math.round(p.qty)+' u · '+fmt(p.total)+'</span></div><div class="barra-bg"><div class="barra-fill" style="width:'+pct+'%"></div></div></div>';
     }).join('') : '<div class="empty">Sin ventas en la selección</div>';
 
     // Detalle días
+    _ticketsV3 = []; // V3: se reconstruye en cada render
     const diasOrdenados = Array.from(diasSeleccionados).sort();
     const detalleHTML = diasOrdenados.map(ds => {
         const vDia = filtrarVentas(todasVentas.filter(v => v.fecha===ds));
@@ -287,7 +325,7 @@ function renderApp() {
         const [a,m,d] = ds.split('-');
         const fechaLabel = parseInt(d)+' de '+MESES[parseInt(m)-1];
         const items = vDia.length ?
-            vDia.map(v=>'<div class="venta-item"><span>'+v.hora+' · '+v.nombre.substring(0,28)+'</span><span>'+fmt(v.total)+'</span></div>').join('') :
+            _detalleItemsHTML(vDia) :
             '<div style="font-size:0.8rem;color:#bbb;padding:6px 0;">Sin ventas este día</div>';
         return '<div class="dia-detalle"><div class="dia-det-header" onclick="toggleDetalle(this)"><span class="dia-det-fecha">📅 '+fechaLabel+'</span><span class="dia-det-total">'+fmt(totDia)+'</span></div><div class="dia-det-body">'+items+'</div></div>';
     }).join('');
@@ -304,11 +342,30 @@ function renderApp() {
                 '<button class="btn-accion" onclick="selSemana()">📅 Esta semana</button>' +
                 '<button class="btn-accion" onclick="selHoy()">📍 Hoy</button>' +
             '</div>' +
-            '<div class="resumen-seleccion"><div class="res-label">Total seleccionado</div><div class="res-total">'+fmt(totSel.total)+'</div><div class="res-dias">'+diasLabel+' · '+ventasSel.length+' transacciones</div></div>' +
+            '<div class="resumen-seleccion"><div class="res-label">Total seleccionado</div><div class="res-total">'+fmt(totSel.total)+'</div><div class="res-dias">'+diasLabel+' · '+_contarOperaciones(ventasSel)+' transacciones</div></div>' +
             (Object.keys(totSel.metodos).length ? '<div class="tarjeta"><div class="tarjeta-titulo">💳 Por método de pago</div>'+metodosRows+'</div>' : '') +
+            (nDias === 1 ? '<div class="tarjeta" id="cajaDiaV8"><div class="tarjeta-titulo">🏦 Caja del día (servidor)</div><div class="empty" style="padding:8px;">Consultando…</div></div>' : '') +
             '<div class="tarjeta"><div class="tarjeta-titulo">🏆 Top productos</div>'+topsHTML+'</div>' +
             (diasOrdenados.length ? '<div class="seccion-titulo" style="margin-top:4px;">📋 Detalle por día</div>'+detalleHTML : '') +
         '</div><div class="pb"></div>';
+    if (nDias === 1) cargarCajaDiaV8(Array.from(diasSeleccionados)[0]); // V8
+}
+
+// V8: caja del día según el servidor. Las ventas MIXTO aparecen separadas en cada medio real; incluye cobros de fiados.
+let _cajaV8Seq = 0;
+async function cargarCajaDiaV8(dia) {
+    const seq = ++_cajaV8Seq;
+    let r = null;
+    try {
+        const url = API_URL + '?action=getCaja&prefijo=' + PREFIJO + '&data=' + encodeURIComponent(JSON.stringify({ token: _tokenActual(), dia: dia }));
+        r = await (await fetch(url, { redirect: 'follow' })).json();
+    } catch (e) { r = null; }
+    const box = document.getElementById('cajaDiaV8'); if (!box || seq !== _cajaV8Seq) return;
+    if (!r || !r.success) { box.innerHTML = '<div class="tarjeta-titulo">🏦 Caja del día (servidor)</div><div class="empty" style="padding:8px;">' + _esc(r && r.error ? (/Acción no reconocida/i.test(r.error) ? 'El servidor todavía no tiene la caja del día (falta actualizarlo).' : r.error) : 'Sin conexión: no se pudo consultar.') + '</div>'; return; }
+    const filas = Object.keys(r.cajaPorMedio || {}).map(m => '<div class="metodo-row"><span class="metodo-nombre">' + _esc(m) + '</span><span><strong class="metodo-monto">' + fmt(r.cajaPorMedio[m]) + '</strong></span></div>').join('') || '<div class="empty" style="padding:8px;">Sin cobros ese día</div>';
+    box.innerHTML = '<div class="tarjeta-titulo">🏦 Caja del día (servidor): ' + fmt(r.totalCaja || 0) + '</div>' + filas +
+        (r.fiadoDelDia ? '<div class="metodo-row"><span class="metodo-nombre">🧾 Quedó fiado</span><span><strong class="metodo-monto">' + fmt(r.fiadoDelDia) + '</strong></span></div>' : '') +
+        '<div style="font-size:0.72rem;color:#999;padding-top:6px;">Ventas + cobros de fiados − vueltos − devoluciones, de todos los equipos.</div>';
 }
 
 function toggleDia(ds) {
@@ -337,14 +394,97 @@ function selTodo() {
     renderApp();
 }
 function deselTodo() { diasSeleccionados.clear(); renderApp(); }
-function selHoy() { diasSeleccionados.clear(); diasSeleccionados.add(new Date().toISOString().slice(0,10)); renderApp(); }
+function selHoy() { diasSeleccionados.clear(); diasSeleccionados.add(_fechaLocalISO(new Date())); renderApp(); }
 function selSemana() {
     diasSeleccionados.clear();
     const hoy = new Date(), ds = hoy.getDay();
-    for (let i=0;i<7;i++) { const d=new Date(hoy); d.setDate(hoy.getDate()-ds+i); diasSeleccionados.add(d.toISOString().slice(0,10)); }
+    for (let i=0;i<7;i++) { const d=new Date(hoy); d.setDate(hoy.getDate()-ds+i); diasSeleccionados.add(_fechaLocalISO(d)); }
     renderApp();
 }
 function toggleDetalle(h) { h.nextElementSibling.classList.toggle('open'); }
+
+// ========== V3: TICKETS AGRUPADOS POR VentaId ==========
+// Solo se agrupan filas con el MISMO VentaId (columna G de VENTAS_XX).
+// Las filas sin VentaId (ventas anteriores a V10 y fiados) se muestran
+// sueltas, una por una, como en V2: no se inventa ninguna agrupación.
+// Los totales, filtros y el top de productos siguen calculándose por fila.
+let _ticketsV3 = [];
+
+function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function _agruparPorTicket(filas) {
+    const grupos = [];
+    const porId = {};
+    filas.forEach(v => {
+        const id = String(v.ventaId || '').trim();
+        if (!id) { grupos.push({ suelta: true, fila: v }); return; }
+        if (!porId[id]) { porId[id] = { suelta: false, ventaId: id, filas: [], total: 0 }; grupos.push(porId[id]); }
+        porId[id].filas.push(v);
+        porId[id].total += parseFloat(v.total) || 0;
+    });
+    return grupos;
+}
+
+// V4: una operación por cada VentaId distinto + una por cada fila sin VentaId.
+// Misma regla que _agruparPorTicket, así coincide con los renglones del detalle.
+function _contarOperaciones(filas) {
+    const ids = new Set();
+    let sueltas = 0;
+    filas.forEach(v => {
+        const id = String(v.ventaId || '').trim();
+        if (id) ids.add(id); else sueltas++;
+    });
+    return ids.size + sueltas;
+}
+
+function _detalleItemsHTML(vDia) {
+    return _agruparPorTicket(vDia).map(g => {
+        if (g.suelta) {
+            const v = g.fila;
+            return '<div class="venta-item venta-suelta"><span>' + _esc(v.hora) + ' · ' + _esc(v.nombre.substring(0,28)) +
+                   '<span class="tk-sin">(sin n.º de ticket)</span></span><span>' + fmt(v.total) + '</span></div>';
+        }
+        const idx = _ticketsV3.push(g) - 1;
+        const v0 = g.filas[0];
+        const n = g.filas.length;
+        return '<div class="venta-item venta-ticket" onclick="abrirTicket(' + idx + ')"><span>' + _esc(v0.hora) + ' · 🧾 ' + n +
+               (n === 1 ? ' producto' : ' productos') + ' <span class="tk-meta">· ' + _esc(v0.metodo) + '</span>' +
+               '<span class="tk-ver">Ver ›</span></span><span>' + fmt(g.total) + '</span></div>';
+    }).join('');
+}
+
+function abrirTicket(idx) {
+    const g = _ticketsV3[idx];
+    if (!g) return;
+    cerrarTicket();
+    const v0 = g.filas[0];
+    const [a, m, d] = String(v0.fecha).split('-');
+    const filasHTML = g.filas.map(v =>
+        '<div class="tk-fila"><div><div class="tk-prod">' + _esc((parseFloat(v.qty) || 0) + ' × ' + v.nombre) + '</div>' +
+        '<div class="tk-unit">' + fmt(v.precio) + ' c/u</div></div><div class="tk-sub">' + fmt(v.total) + '</div></div>'
+    ).join('');
+    const bg = document.createElement('div');
+    bg.className = 'tk-bg';
+    bg.id = 'ticketV3';
+    bg.onclick = e => { if (e.target === bg) cerrarTicket(); };
+    bg.innerHTML =
+        '<div class="tk-sheet" role="dialog" aria-label="Detalle del ticket">' +
+            '<div class="tk-head"><div><div class="tk-titulo">🧾 Ticket</div><div class="tk-id">' + _esc(g.ventaId) + '</div></div>' +
+            '<button class="tk-cerrar" onclick="cerrarTicket()" aria-label="Cerrar">✕</button></div>' +
+            '<div class="tk-dato">📅 ' + _esc(d + '/' + m + '/' + a) + ' · 🕐 ' + _esc(v0.hora) + '</div>' +
+            '<div class="tk-dato">💳 ' + _esc(v0.metodo) + '</div>' +
+            filasHTML +
+            '<div class="tk-total"><span>Total</span><span>' + fmt(g.total) + '</span></div>' +
+        '</div>';
+    document.body.appendChild(bg);
+}
+
+function cerrarTicket() {
+    const el = document.getElementById('ticketV3');
+    if (el) el.remove();
+}
 
 init();
 </script>
