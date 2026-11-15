@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es-AR">
+<html lang="es-CL">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-/* planes.html v5.8 (13/11): WhatsApp con el número internacional correcto (5492944907380) y primero WhatsApp Business · v5.7 (07/11): vista previa al compartir con el afiche nuevo (og-vao-pos-2.jpg) · v5.6 (07/11): Prueba gratis arriba de «Planes» y clickeable (lleva al formulario); marco que abraza P1 → plan elegido; tarjetas alineadas · v5.5 (07/11): cada tarjeta muestra solo sus herramientas con su etiqueta encima; «Incluye ✔ Todo P1 · ✔ Todo P2» en una línea · v5.4 (07/11): sin «lista de espera» — «Reservar mi prueba gratis», aviso amable con WhatsApp y sin «no hay fecha asegurada» · v5.3 (07/11): el rompecabezas une P1 + P2 + P3 PRO en una sola pieza (antes P3 quedaba separada) · v5.2: enlace Términos · v5 (STAGING · v044.1) — tres planes como composición envolvente: P1 es la base, P2 abraza a P1, P3 PRO abraza a P1 y P2 y suma el paquete PRO.
+/* planes.html v5.8-CL (15/11): prefijo telefónico +56 por defecto (CL); selector +54/+56/+1/otro · v5.8 (13/11): WhatsApp con el número internacional correcto (5492944907380) y primero WhatsApp Business · v5.7 (07/11): vista previa al compartir con el afiche nuevo (og-vao-pos-2.jpg) · v5.6 (07/11): Prueba gratis arriba de «Planes» y clickeable (lleva al formulario); marco que abraza P1 → plan elegido; tarjetas alineadas · v5.5 (07/11): cada tarjeta muestra solo sus herramientas con su etiqueta encima; «Incluye ✔ Todo P1 · ✔ Todo P2» en una línea · v5.4 (07/11): sin «lista de espera» — «Reservar mi prueba gratis», aviso amable con WhatsApp y sin «no hay fecha asegurada» · v5.3 (07/11): el rompecabezas une P1 + P2 + P3 PRO en una sola pieza (antes P3 quedaba separada) · v5.2: enlace Términos · v5 (STAGING · v044.1) — tres planes como composición envolvente: P1 es la base, P2 abraza a P1, P3 PRO abraza a P1 y P2 y suma el paquete PRO.
    Complementos opcionales aparte (verdes). Íconos y nombres salen de la matriz central del servidor (catalogoV043.apps).
    planes.html v4 (STAGING · v044) — «Armá tu plan» como rompecabezas: arrastrar y encajar, o tocar las piezas.
    planes.html v3 (STAGING · v043) — página pública. Planes P1/P2, complementos P3 «Armá tu plan». Nombres, prestaciones y precios vienen del servidor (PLANES_VAO y COMPLEMENTOS_VAO). */
@@ -203,6 +203,12 @@ ul.hace b { color: var(--tinta); }
 .campo input:focus { border-color: var(--azul); outline: none; }
 .campo .ayuda { font-size: .85rem; color: var(--suave); margin-top: 3px; }
 .campo.mal input { border-color: var(--rojo); }
+/* v5.8-CL: prefijo teléfono */
+.tel-fila { display: flex; gap: 6px; }
+.tel-prefijo { flex: 0 0 auto; min-height: 50px; border: 2px solid var(--borde); border-radius: 10px; padding: 10px 8px; font: inherit; background: #fff; color: var(--texto); font-size: .97rem; cursor: pointer; }
+.tel-prefijo:focus { border-color: var(--azul); outline: none; }
+.campo.mal .tel-prefijo, .campo.mal input { border-color: var(--rojo); }
+.tel-numero { flex: 1 1 auto; }
 .trampa { position: absolute; left: -5000px; width: 1px; height: 1px; overflow: hidden; }
 .condiciones { border: 2px solid var(--borde); border-radius: 10px; padding: 10px 12px; max-height: 190px; overflow-y: auto; font-size: .9rem; white-space: pre-line; background: #FAFCFF; }
 .check { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: start; margin: 12px 0 16px; font-weight: 700; }
@@ -311,8 +317,17 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
     <form id="formDatos" novalidate>
       <div class="campo" id="c_comercio"><label for="comercio">Nombre del comercio</label><input id="comercio" maxlength="60" autocomplete="organization" required></div>
       <div class="campo" id="c_responsable"><label for="responsable">Tu nombre y apellido</label><input id="responsable" maxlength="60" autocomplete="name" required></div>
-      <div class="campo" id="c_telefono"><label for="telefono">Teléfono / WhatsApp</label><input id="telefono" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="Ej.: 2944 123456" required>
-        <div class="ayuda">Con característica, sin 0 ni 15.</div></div>
+      <div class="campo" id="c_telefono"><label for="telefono">Teléfono / WhatsApp</label>
+        <div class="tel-fila">
+          <select id="telPrefijo" class="tel-prefijo" aria-label="Código de país">
+            <option value="+56" selected>🇨🇱 +56</option>
+            <option value="+54">🇦🇷 +54</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="">otro</option>
+          </select>
+          <input id="telefono" class="tel-numero" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="9 1234 5678" required>
+        </div>
+        <div class="ayuda" id="ayudaTel">Sin el 0. Ej.: 9 1234 5678</div></div>
       <div class="campo" id="c_correo"><label for="correo">Correo electrónico</label><input id="correo" type="email" inputmode="email" maxlength="100" autocomplete="email" required>
         <div class="ayuda">Te mandamos un código para confirmarlo.</div></div>
       <div class="trampa" aria-hidden="true"><label>Sitio web <input id="web" tabindex="-1" autocomplete="off"></label></div>
@@ -391,7 +406,7 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
 
 <script>
 // planes.html v5 (v044.1) — STAGING. v4 (v044) / v3 (v043): Todo lo comercial (precios, oferta, condiciones, cupos) lo decide el servidor.
-const API_URL = 'https://script.google.com/macros/s/AKfycbzJ3NY7XJ_DXtCYAhvJhRL-Dhnzib5EsnYUDcXt6XIYnV4gTQ1p-GwUhqDaLjJLZVi2/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxtbML_7tamuiXWiaprtQJXYhC5b3VzqEj_vgmWnSg0WwfL5vwESLMAnRMvUobe2v4q/exec';
 const URL_PUBLICA = location.origin + location.pathname;
 const LS_SOL = 'vao_registro_solicitud';
 const T0 = Date.now();
@@ -660,14 +675,40 @@ function mostrarResultado(r) {
   if (r.esperaCodigo) { solicitudId = r.solicitudId; $('textoCodigo').textContent = r.mensaje; paso(2); return; }
 }
 
+// v5.8-CL: actualizar placeholder/ayuda al cambiar prefijo
+(function() {
+  const pref = $('telPrefijo'); if (!pref) return;
+  const ayudas = { '+56': 'Sin el 0. Ej.: 9 1234 5678', '+54': 'Sin 0 ni 15. Ej.: 2944 123456', '+1': 'Ej.: 212 555 1234', '': 'Con código de país completo' };
+  const ph = { '+56': '9 1234 5678', '+54': '2944 123456', '+1': '212 555 1234', '': '+XX ...' };
+  pref.addEventListener('change', function() {
+    const v = pref.value;
+    $('telefono').placeholder = ph[v] || ph[''];
+    $('ayudaTel').textContent = ayudas[v] || ayudas[''];
+  });
+})();
+
+function _telCL_(prefijo, numero) {
+  // Si el usuario ya escribió el prefijo completo (ej: +569...) no duplicar
+  var n = String(numero || '').trim();
+  if (!prefijo) return n; // "otro": tal cual
+  var digits = n.replace(/\D/g, '');
+  var prefDigits = prefijo.replace(/\D/g, '');
+  // Si ya empieza con el prefijo, no agregar
+  if (digits.indexOf(prefDigits) === 0) return n;
+  return prefijo + n;
+}
+
 $('formDatos').addEventListener('submit', async ev => {
   ev.preventDefault();
   if (!CONDICIONES) { mensaje('Todavía no cargaron las condiciones. Recargá la página.', 'error'); return; }
   if (!$('acepta').checked) { mensaje('Para seguir tenés que leer y aceptar las condiciones de la prueba.', 'error'); marcar('acepta'); return; }
   const btn = $('btnCodigo'); btn.disabled = true; btn.textContent = 'Enviando…'; mensaje('');
+  // v5.8-CL: concatenar prefijo + número
+  const prefijo = $('telPrefijo') ? $('telPrefijo').value : '';
+  const telefonoFinal = _telCL_(prefijo, $('telefono').value);
   try {
     const r = await api('registroSolicitarCodigo', {
-      comercio: $('comercio').value, responsable: $('responsable').value, telefono: $('telefono').value, correo: $('correo').value,
+      comercio: $('comercio').value, responsable: $('responsable').value, telefono: telefonoFinal, correo: $('correo').value,
       acepta: true, condicionesVersion: CONDICIONES.version, web: $('web').value, t: Date.now() - T0 });
     if (r.success && r.solicitudId && !r.listaEspera && !r.yaCreado) {
       solicitudId = r.solicitudId; guardarSol(solicitudId);

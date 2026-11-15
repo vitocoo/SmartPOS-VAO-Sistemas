@@ -5,7 +5,7 @@
    La pantalla solo muestra: cada acción la vuelve a validar el servidor (sesión, plan y complemento contratado). */
 (function () {
   'use strict';
-  var API_URL = 'https://script.google.com/macros/s/AKfycbzJ3NY7XJ_DXtCYAhvJhRL-Dhnzib5EsnYUDcXt6XIYnV4gTQ1p-GwUhqDaLjJLZVi2/exec';   // PRODUCCIÓN AR
+  var API_URL = 'https://script.google.com/macros/s/AKfycbxtbML_7tamuiXWiaprtQJXYhC5b3VzqEj_vgmWnSg0WwfL5vwESLMAnRMvUobe2v4q/exec';   // PRODUCCIÓN CL
   var qs = new URLSearchParams(location.search);
   var PREFIJO = String(qs.get('p') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
   var TOKEN_KEY = 'vao_token_' + PREFIJO;
